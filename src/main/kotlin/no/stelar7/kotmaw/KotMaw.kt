@@ -1,51 +1,49 @@
 package no.stelar7.kotmaw
 
-import no.stelar7.kotmaw.annotation.ProductionData
+import kotlinx.coroutines.experimental.runBlocking
+import no.stelar7.kotmaw.annotation.limiter.StandardBurstLimiter
 import no.stelar7.kotmaw.debug.DebugLevel
+import no.stelar7.kotmaw.plugin.registerProducer
+import no.stelar7.kotmaw.plugin.registerRatelimiterType
+import no.stelar7.kotmaw.plugin.sortProducers
 import no.stelar7.kotmaw.producer.SummonerProducer
-import no.stelar7.kotmaw.util.registerProducer
-import kotlin.reflect.KClass
+import no.stelar7.kotmaw.riotconstant.Platform
+import no.stelar7.kotmaw.util.summonerByAccountId
+import no.stelar7.kotmaw.util.summonerByName
+import no.stelar7.kotmaw.util.summonerBySummonerId
 
-class KotMaw(val api_key: String)
+class KotMaw(api_key: String)
 {
     companion object
     {
         var debugLevel: DebugLevel = DebugLevel.ALL
-        var apiKey: String = "";
+        var apiKey: String = ""
     }
-
-    val producers = HashMap<KClass<*>, MutableList<ProductionData>>()
 
     init
     {
         apiKey = api_key
 
         registerProducer(SummonerProducer::class)
+        sortProducers()
 
-
-        producers.forEach { _, v -> v.sortByDescending { it.priority } }
+        registerRatelimiterType(StandardBurstLimiter::class)
     }
 }
 
-/*
+
 fun main(args: Array<String>)
 {
-    val api = KotMaw()
-
-
-    launch {
-        // run in background (non-blocking)
-        api.summonerByAccountId(Platform.EUW1, 22401330).await()
-    }
-
-    println("weewoo")
+    val api = KotMaw("RGAPI-0e01902c-3303-4f26-bdda-ae55c8f8324c")
 
     runBlocking {
+
         // run in background (blocking)
         api.summonerByAccountId(Platform.EUW1, 22401330).await()
+        api.summonerBySummonerId(Platform.EUW1, 19613950).await()
+        api.summonerByName(Platform.EUW1, "stelar7").await()
     }
 
     println("weewoo")
-}
 
-*/
+}

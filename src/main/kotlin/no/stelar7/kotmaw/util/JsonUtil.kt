@@ -17,7 +17,7 @@ class JsonUtil
         }
 
 
-        inline fun <reified T: Any> fromJson(data: String?): T?
+        inline fun <reified T: Any> fromJson(data: String): T
         {
             return gson.fromJson(data, T::class.java)
         }
