@@ -3,16 +3,10 @@ package no.stelar7.kotmaw.limiter
 import no.stelar7.kotmaw.http.HttpResponse
 import java.time.Duration
 
-abstract class RateLimiter(val limits: MutableList<RateLimit>)
+abstract class RateLimiter
 {
     abstract fun getToken()
     abstract fun update(data: HttpResponse)
-
-    fun setLimits(limits: MutableList<RateLimit>)
-    {
-        this.limits.clear()
-        this.limits.addAll(limits)
-    }
 }
 
 

@@ -57,14 +57,14 @@ fun sortProducers()
     producers.forEach { _, v -> v.sortByDescending { it.priority } }
 }
 
-internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint, data: Map<String, Any>): ProductionData
+internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint, data: Map<String, Any>): List<ProductionData>
 {
     val classMethodPairList = producers[T::class] ?: throw IllegalArgumentException("No producer registered for \"${T::class.simpleName}\"")
-    val productionData = classMethodPairList.firstOrNull { it.endpoint == endpoint } ?: throw IllegalArgumentException("No producer registered with method \"$endpoint\"")
+    val productionData = classMethodPairList.filter { it.endpoint == endpoint }
 
     require(data.containsKey("platform"))
 
-    if (productionData.limited)
+    if (productionData.first().limited)
     {
         runBlocking {
             limiters[data["platform"]]!![endpoint]!!.forEach {
@@ -79,23 +79,48 @@ internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint
     return productionData
 }
 
-fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any>, productionData: ProductionData): HttpResponse
+fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any>, productionData: List<ProductionData>): HttpResponse
 {
-    val result = productionData.method.call(productionData.instance, data) as HttpResponse
-    KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${productionData.endpoint}\" from plugin \"${productionData.instance::class.simpleName}\" with priority \"${productionData.priority}\"")
+    var output: HttpResponse? = null
+
+    productionData.forEach {
+        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${it.endpoint}\" from plugin \"${it.instance::class.simpleName}\" with priority \"${it.priority}\"")
+        val result = it.method.call(it.instance, data) as HttpResponse
+
+        when (result.responseCode)
+        {
+            200 -> output = result
+            404 -> if (data["404"] as Boolean) output = result
+
+            401 -> throw IllegalArgumentException("API key is missing from call")
+            403 -> throw IllegalArgumentException("API key is invalid")
+        }
+
+        if (output != null)
+        {
+            return@forEach
+        }
+
+        KotMaw.debugLevel.printIf(DebugLevel.ALL, "\"${it.endpoint}\" from plugin \"${it.instance::class.simpleName}\" with priority \"${it.priority}\" did not produce a valid result")
+    }
+
+    if (output == null)
+    {
+        throw IllegalArgumentException("All producers failed to create a valid response")
+    }
 
     limiters[data["platform"]]!![endpoint]!!.forEach {
         KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for limiter $it")
-        it.update(result)
+        it.update(output!!)
     }
 
-    return result
+    return output!!
 }
 
 internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Map<String, Any>): T
 {
-    val productionData: ProductionData = doCommonStuff<T>(endpoint, data)
-    val response: HttpResponse = applyLimiting(endpoint, data, productionData)
+    val productionData = doCommonStuff<T>(endpoint, data)
+    val response = applyLimiting(endpoint, data, productionData)
 
     return JsonUtil.fromJson(response.toString)
 }
@@ -103,8 +128,8 @@ internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Ma
 
 internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data: Map<String, Any>): List<T>
 {
-    val productionData: ProductionData = doCommonStuff<T>(endpoint, data)
-    val response: HttpResponse = applyLimiting(endpoint, data, productionData)
+    val productionData = doCommonStuff<T>(endpoint, data)
+    val response = applyLimiting(endpoint, data, productionData)
 
     val list: MutableList<T> = JsonUtil.fromJson(response.toString)
     val resultList: MutableList<T> = mutableListOf()

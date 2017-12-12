@@ -3,7 +3,7 @@ package no.stelar7.kotmaw.limiter
 import no.stelar7.kotmaw.http.HttpResponse
 import java.time.Duration
 
-class StandardBurstLimiter(limits: MutableList<RateLimit>): RateLimiter(limits)
+data class StandardBurstLimiter(val limits: MutableList<RateLimit>): RateLimiter()
 {
     override fun update(data: HttpResponse)
     {

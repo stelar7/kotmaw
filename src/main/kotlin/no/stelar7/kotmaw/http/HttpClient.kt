@@ -53,7 +53,7 @@ class HttpClient
                 }
             }
 
-            BufferedReader(InputStreamReader(inputStream)).use {
+            BufferedReader(InputStreamReader(if (responseCode == 200) inputStream else errorStream)).use {
                 val buffer = StringBuffer()
 
                 var inData = it.readLine()
