@@ -1,16 +1,13 @@
 package no.stelar7.kotmaw
 
 import kotlinx.coroutines.experimental.runBlocking
-import no.stelar7.kotmaw.annotation.limiter.StandardBurstLimiter
 import no.stelar7.kotmaw.debug.DebugLevel
+import no.stelar7.kotmaw.limiter.StandardBurstLimiter
 import no.stelar7.kotmaw.plugin.registerProducer
 import no.stelar7.kotmaw.plugin.registerRatelimiterType
 import no.stelar7.kotmaw.plugin.sortProducers
-import no.stelar7.kotmaw.producer.SummonerProducer
+import no.stelar7.kotmaw.producer.defaults.*
 import no.stelar7.kotmaw.riotconstant.Platform
-import no.stelar7.kotmaw.util.summonerByAccountId
-import no.stelar7.kotmaw.util.summonerByName
-import no.stelar7.kotmaw.util.summonerBySummonerId
 
 class KotMaw(api_key: String)
 {
@@ -25,6 +22,7 @@ class KotMaw(api_key: String)
         apiKey = api_key
 
         registerProducer(SummonerProducer::class)
+        registerProducer(ChampionMasteryProducer::class)
         sortProducers()
 
         registerRatelimiterType(StandardBurstLimiter::class)
@@ -39,6 +37,8 @@ fun main(args: Array<String>)
     runBlocking {
 
         // run in background (blocking)
+        api.championMasteries(Platform.Service.EUW1, 19613950).await().forEach { println(it) }
+
         api.summonerByAccountId(Platform.Service.EUW1, 22401330).await()
         api.summonerBySummonerId(Platform.Service.EUW1, 19613950).await()
         api.summonerByName(Platform.Service.EUW1, "stelar7").await()

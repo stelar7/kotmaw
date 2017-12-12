@@ -3,11 +3,11 @@ package no.stelar7.kotmaw.plugin
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.runBlocking
 import no.stelar7.kotmaw.KotMaw
-import no.stelar7.kotmaw.annotation.limiter.RateLimiter
-import no.stelar7.kotmaw.annotation.producer.Producer
-import no.stelar7.kotmaw.annotation.producer.ProductionData
 import no.stelar7.kotmaw.debug.DebugLevel
 import no.stelar7.kotmaw.http.HttpResponse
+import no.stelar7.kotmaw.limiter.RateLimiter
+import no.stelar7.kotmaw.producer.Producer
+import no.stelar7.kotmaw.producer.ProductionData
 import no.stelar7.kotmaw.riotconstant.APIEndpoint
 import no.stelar7.kotmaw.riotconstant.Platform
 import no.stelar7.kotmaw.util.JsonUtil
@@ -57,7 +57,7 @@ fun sortProducers()
     producers.forEach { _, v -> v.sortByDescending { it.priority } }
 }
 
-internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Map<String, Any>): T
+internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint, data: Map<String, Any>): ProductionData
 {
     val classMethodPairList = producers[T::class] ?: throw IllegalArgumentException("No producer registered for \"${T::class.simpleName}\"")
     val productionData = classMethodPairList.firstOrNull { it.endpoint == endpoint } ?: throw IllegalArgumentException("No producer registered with method \"$endpoint\"")
@@ -75,13 +75,44 @@ internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Ma
         }
     }
 
+    return productionData
+}
+
+fun applyLimiting(endpoint: APIEndpoint, productionData: ProductionData, data: Map<String, Any>): HttpResponse
+{
     val result = productionData.method.call(productionData.instance, data) as HttpResponse
 
-    limiters[data["platform"]]?.get(endpoint)?.forEach {
+    limiters[data["platform"]]!![endpoint]!!.forEach {
         it.update(result)
     }
 
+    return result
+}
+
+internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Map<String, Any>): T
+{
+    val productionData: ProductionData = doCommonStuff<T>(endpoint, data)
+    val response: HttpResponse = applyLimiting(endpoint, productionData, data)
 
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${productionData.endpoint}\" from plugin \"${productionData.instance::class.simpleName}\" with priority \"${productionData.priority}\"")
-    return JsonUtil.fromJson(result.toString) as T
+    return JsonUtil.fromJson(response.toString) as T
+}
+
+
+internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data: Map<String, Any>): List<T>
+{
+    val productionData: ProductionData = doCommonStuff<T>(endpoint, data)
+    val response: HttpResponse = applyLimiting(endpoint, productionData, data)
+
+    KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${productionData.endpoint}\" from plugin \"${productionData.instance::class.simpleName}\" with priority \"${productionData.priority}\"")
+
+    val list: MutableList<T> = JsonUtil.fromJson(response.toString)
+    val resultList: MutableList<T> = mutableListOf()
+
+    list.forEach {
+        val fixed = JsonUtil.fromJson(JsonUtil.toJson(it)) as T
+        resultList.add(fixed)
+    }
+
+    return resultList
 }

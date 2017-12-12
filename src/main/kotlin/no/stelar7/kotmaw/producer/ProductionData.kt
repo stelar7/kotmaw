@@ -1,4 +1,4 @@
-package no.stelar7.kotmaw.annotation.producer
+package no.stelar7.kotmaw.producer
 
 import no.stelar7.kotmaw.riotconstant.APIEndpoint
 import kotlin.reflect.KCallable

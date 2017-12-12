@@ -1,4 +1,4 @@
-package no.stelar7.kotmaw.annotation.limiter
+package no.stelar7.kotmaw.limiter
 
 import no.stelar7.kotmaw.http.HttpResponse
 import java.time.Duration
