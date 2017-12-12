@@ -39,9 +39,9 @@ fun main(args: Array<String>)
     runBlocking {
 
         // run in background (blocking)
-        api.summonerByAccountId(Platform.EUW1, 22401330).await()
-        api.summonerBySummonerId(Platform.EUW1, 19613950).await()
-        api.summonerByName(Platform.EUW1, "stelar7").await()
+        api.summonerByAccountId(Platform.Service.EUW1, 22401330).await()
+        api.summonerBySummonerId(Platform.Service.EUW1, 19613950).await()
+        api.summonerByName(Platform.Service.EUW1, "stelar7").await()
     }
 
     println("weewoo")

@@ -18,15 +18,15 @@ val producers: HashMap<KClass<*>, MutableList<ProductionData>> by lazy {
     HashMap<KClass<*>, MutableList<ProductionData>>()
 }
 
-val limiters: HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>> by lazy {
-    HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>>()
+val limiters: HashMap<Platform.Service, HashMap<APIEndpoint, MutableList<RateLimiter>>> by lazy {
+    HashMap<Platform.Service, HashMap<APIEndpoint, MutableList<RateLimiter>>>()
 }
 
 
 fun registerRatelimiterType(clazz: KClass<out RateLimiter>)
 {
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Registering limiter: ${clazz.simpleName}")
-    Platform.values().forEach { platform ->
+    Platform.Service.values().forEach { platform ->
         val endpointLimits = limiters.getOrPut(platform, { hashMapOf() })
 
         APIEndpoint.values().forEach { apiEndpoint ->
