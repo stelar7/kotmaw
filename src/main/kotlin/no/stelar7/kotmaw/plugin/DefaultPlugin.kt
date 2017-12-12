@@ -109,6 +109,8 @@ internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data
     val list: MutableList<T> = JsonUtil.fromJson(response.toString)
     val resultList: MutableList<T> = mutableListOf()
 
+    KotMaw.debugLevel.printIf(DebugLevel.ALL, "Transforming from List<LinkedTreeMap> to List<T>")
+
     list.forEach {
         val fixed = JsonUtil.fromJson(JsonUtil.toJson(it)) as T
         resultList.add(fixed)
