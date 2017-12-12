@@ -11,31 +11,16 @@ import no.stelar7.kotmaw.http.HttpResponse
 import no.stelar7.kotmaw.riotconstant.APIEndpoint
 import no.stelar7.kotmaw.riotconstant.Platform
 import no.stelar7.kotmaw.util.JsonUtil
-import no.stelar7.kotmaw.util.notNull
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
-private var _producers: HashMap<KClass<*>, MutableList<ProductionData>>? = null
-val producers: HashMap<KClass<*>, MutableList<ProductionData>>
-    get()
-    {
-        if (_producers == null)
-        {
-            _producers = HashMap()
-        }
-        return _producers ?: throw AssertionError("Set to null by another thread")
-    }
+val producers: HashMap<KClass<*>, MutableList<ProductionData>> by lazy {
+    HashMap<KClass<*>, MutableList<ProductionData>>()
+}
 
-private var _limiters: HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>>? = null
-val limiters: HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>>
-    get()
-    {
-        if (_limiters == null)
-        {
-            _limiters = HashMap()
-        }
-        return _limiters ?: throw AssertionError("Set to null by another thread")
-    }
+val limiters: HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>> by lazy {
+    HashMap<Platform, HashMap<APIEndpoint, MutableList<RateLimiter>>>()
+}
 
 
 fun registerRatelimiterType(clazz: KClass<out RateLimiter>)
@@ -58,7 +43,7 @@ fun registerProducer(clazz: KClass<*>)
 
     clazz.members.forEach { method ->
         val producerAnnotation = method.annotations.find { annotation -> annotation is Producer } as? Producer
-        producerAnnotation?.notNull {
+        producerAnnotation?.let {
             val data = ProductionData(it.priority, it.endpoint, clazz.createInstance(), method, it.limited)
             producers.getOrPut(it.value, { mutableListOf() }).add(data)
             KotMaw.debugLevel.printIf(DebugLevel.ALL, "Registered production of: \"${it.value.simpleName}\" from method: \"${data.endpoint}\" with priority: \"${data.priority}\"")
