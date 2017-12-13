@@ -18,8 +18,8 @@ val producers: HashMap<KClass<*>, MutableList<ProductionData>> by lazy {
     HashMap<KClass<*>, MutableList<ProductionData>>()
 }
 
-val limiters: HashMap<Platform.Service, HashMap<APIEndpoint, MutableList<RateLimiter>>> by lazy {
-    HashMap<Platform.Service, HashMap<APIEndpoint, MutableList<RateLimiter>>>()
+val limiters: HashMap<Platform.Service, HashMap<Enum<*>, MutableList<RateLimiter>>> by lazy {
+    HashMap<Platform.Service, HashMap<Enum<*>, MutableList<RateLimiter>>>()
 }
 
 
@@ -33,18 +33,23 @@ fun registerRatelimiterType(clazz: KClass<out RateLimiter>)
             val limits = endpointLimits.getOrPut(apiEndpoint, { mutableListOf() })
             limits.add(clazz.createInstance())
         }
+
+        Platform.Service.values().forEach { apiEndpoint ->
+            val limits = endpointLimits.getOrPut(apiEndpoint, { mutableListOf() })
+            limits.add(clazz.createInstance())
+        }
     }
 }
 
 
-fun registerProducer(clazz: KClass<*>)
+fun registerProducer(clazz: KClass<*>, priority: Int? = null)
 {
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Registering producer: ${clazz.simpleName}")
 
     clazz.members.forEach { method ->
         val producerAnnotation = method.annotations.find { annotation -> annotation is Producer } as? Producer
         producerAnnotation?.let {
-            val data = ProductionData(it.priority, it.endpoint, clazz.createInstance(), method, it.limited)
+            val data = ProductionData(priority ?: it.priority, it.endpoint, clazz.createInstance(), method, it.limited)
             producers.getOrPut(it.value, { mutableListOf() }).add(data)
             KotMaw.debugLevel.printIf(DebugLevel.ALL, "Registered production of: \"${it.value.simpleName}\" from method: \"${data.endpoint}\" with priority: \"${data.priority}\"")
         }
@@ -67,7 +72,7 @@ internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint
     if (productionData.first().limited)
     {
         runBlocking {
-            limiters[data["platform"]]!![endpoint]!!.forEach {
+            limiters[data["platform"]]!![data["platform"]]!!.plus(limiters[data["platform"]]!![endpoint]!!).forEach {
                 async {
                     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Getting token for limiter $it")
                     it.getToken()
@@ -83,6 +88,8 @@ fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any>, productionData:
 {
     var output: HttpResponse? = null
 
+    require(data.containsKey("platform"))
+
     productionData.forEach {
         KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${it.endpoint}\" from plugin \"${it.instance::class.simpleName}\" with priority \"${it.priority}\"")
         val result = it.method.call(it.instance, data) as HttpResponse
@@ -94,6 +101,7 @@ fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any>, productionData:
 
             401 -> throw IllegalArgumentException("API key is missing from call")
             403 -> throw IllegalArgumentException("API key is invalid")
+            429 -> throw IllegalArgumentException("Ratelimit exceeded")
         }
 
         if (output != null)
@@ -110,8 +118,13 @@ fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any>, productionData:
     }
 
     limiters[data["platform"]]!![endpoint]!!.forEach {
-        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for limiter $it")
-        it.update(output!!)
+        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for method limiter $it")
+        it.updateLimits(data["platform"] as Platform.Service, endpoint, output!!)
+    }
+
+    limiters[data["platform"]]!![data["platform"]]!!.forEach {
+        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for app limiter $it")
+        it.updateLimits(data["platform"] as Platform.Service, data["platform"], output!!)
     }
 
     return output!!
@@ -131,7 +144,7 @@ internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data
     val productionData = doCommonStuff<T>(endpoint, data)
     val response = applyLimiting(endpoint, data, productionData)
 
-    val list: MutableList<T> = JsonUtil.fromJson(response.toString)
+    val list: List<T> = JsonUtil.fromJson(response.toString)
     val resultList: MutableList<T> = mutableListOf()
 
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Transforming from List<LinkedTreeMap> to List<T>")
