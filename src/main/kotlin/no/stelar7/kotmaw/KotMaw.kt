@@ -36,39 +36,16 @@ fun main(args: Array<String>)
     val api = KotMaw("RGAPI-9a66e168-f840-45df-9867-d4d06255e10f")
 
     runBlocking {
+        api.championMasteries(Platform.Service.EUW1, 19613950).await()
+    }
+
+    runBlocking {
         launch {
             // run in background (blocking)
             api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-
-
-            api.summonerByAccountId(Platform.Service.EUW1, 22401330).await()
-            api.summonerBySummonerId(Platform.Service.EUW1, 19613950).await()
-            api.summonerByName(Platform.Service.EUW1, "stelar7").await()
+            api.summonerByAccountId(Platform.Service.EUW1, 22401330)
+            api.summonerBySummonerId(Platform.Service.EUW1, 19613950)
+            api.summonerByName(Platform.Service.EUW1, "stelar7")
         }.join()
     }
-
-    println("weewoo")
-
 }

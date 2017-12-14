@@ -70,7 +70,7 @@ class StandardBurstLimiter: RateLimiter()
         }
     }
 
-    override fun getToken()
+    @Synchronized override fun getToken()
     {
         lock.withLock {
             updateCalls()
@@ -102,7 +102,13 @@ class StandardBurstLimiter: RateLimiter()
     private fun getSleepTime(): Long?
     {
         val now = Instant.now()
-        var currentDelay: Long = 0
+        var currentDelay: Long? = null
+
+        if (limits.isEmpty())
+        {
+            KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "No ratelimiter registered yet")
+            return currentDelay
+        }
 
         limits.forEach {
             val calls = callCount[it]!!
@@ -112,15 +118,17 @@ class StandardBurstLimiter: RateLimiter()
                 KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "$it is over limit! ($calls >= ${it.limit})")
 
                 val sleep = firstCall[it]!!.toEpochMilli() + it.time.toMillis() - now.toEpochMilli()
-                if (currentDelay < sleep)
+                if ((currentDelay ?: 0) < sleep)
                 {
                     KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "New sleep time is $sleep milliseconds")
                     currentDelay = sleep
                 }
+            } else
+            {
+                KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "Under ratelimit")
             }
         }
-
-        return if (currentDelay == 0.toLong()) null else currentDelay
+        return currentDelay
     }
 
     override fun toString(): String
