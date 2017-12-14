@@ -36,10 +36,6 @@ fun main(args: Array<String>)
     val api = KotMaw("RGAPI-9a66e168-f840-45df-9867-d4d06255e10f")
 
     runBlocking {
-        api.championMasteries(Platform.Service.EUW1, 19613950).await()
-    }
-
-    runBlocking {
         launch {
             // run in background (blocking)
             api.championMasteries(Platform.Service.EUW1, 19613950)

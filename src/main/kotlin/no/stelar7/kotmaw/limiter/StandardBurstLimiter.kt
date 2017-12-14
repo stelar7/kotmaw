@@ -125,7 +125,7 @@ class StandardBurstLimiter: RateLimiter()
                 }
             } else
             {
-                KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "Under ratelimit")
+                KotMaw.debugLevel.printIf(DebugLevel.EXTENDED, "Under ratelimit ($calls / ${it.limit})")
             }
         }
         return currentDelay
