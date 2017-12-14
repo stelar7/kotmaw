@@ -24,6 +24,7 @@ class KotMaw(api_key: String)
 
         registerProducer(SummonerProducer::class)
         registerProducer(ChampionMasteryProducer::class)
+        registerProducer(MatchProducer::class)
         sortProducers()
 
         registerRatelimiterType(StandardBurstLimiter::class)
@@ -38,10 +39,28 @@ fun main(args: Array<String>)
     runBlocking {
         launch {
             // run in background (blocking)
-            api.championMasteries(Platform.Service.EUW1, 19613950)
-            api.summonerByAccountId(Platform.Service.EUW1, 22401330)
-            api.summonerBySummonerId(Platform.Service.EUW1, 19613950)
-            api.summonerByName(Platform.Service.EUW1, "stelar7")
+            //            api.championMasteries(Platform.Service.EUW1, 19613950)
+            //            api.summonerByAccountId(Platform.Service.EUW1, 22401330)
+            //            api.summonerBySummonerId(Platform.Service.EUW1, 19613950)
+            //            api.summonerByName(Platform.Service.EUW1, "stelar7")
+
+
+            api.matchlist(Platform.Service.EUW1, 22401330) {
+                MatchListParams(queue = setOf(440))
+            }.await().matches.forEach { println(it) }
+
+
+            //            api.matchlist(Platform.Service.EUW1, 22401330) {
+            //                queue = setOf(1)
+            //                season = setOf(2)
+            //                champion = setOf(3)
+            //                beginTime = 4
+            //                endTime = 5
+            //                beginIndex = 6
+            //                endIndex = 7
+            //            }
+
+
         }.join()
     }
 }

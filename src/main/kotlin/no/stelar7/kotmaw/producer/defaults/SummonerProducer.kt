@@ -2,7 +2,6 @@ package no.stelar7.kotmaw.producer.defaults
 
 import kotlinx.coroutines.experimental.async
 import no.stelar7.kotmaw.KotMaw
-import no.stelar7.kotmaw.dto.Summoner
 import no.stelar7.kotmaw.http.HttpClient
 import no.stelar7.kotmaw.http.HttpResponse
 import no.stelar7.kotmaw.plugin.get
@@ -63,3 +62,5 @@ fun KotMaw.summonerBySummonerId(platform: Platform.Service, id: Long) = async {
 fun KotMaw.summonerByAccountId(platform: Platform.Service, id: Long) = async {
     get<Summoner>(APIEndpoint.SUMMONER_BY_ACCOUNT, hashMapOf("platform" to platform, "id" to id))
 }
+
+data class Summoner(val id: Long, val accountId: Long, val name: String, val profileIconId: Int, val revisionDate: Long, val summonerLevel: Int)

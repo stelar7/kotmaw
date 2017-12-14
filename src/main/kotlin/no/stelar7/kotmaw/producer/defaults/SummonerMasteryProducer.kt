@@ -2,7 +2,6 @@ package no.stelar7.kotmaw.producer.defaults
 
 import kotlinx.coroutines.experimental.async
 import no.stelar7.kotmaw.KotMaw
-import no.stelar7.kotmaw.dto.ChampionMastery
 import no.stelar7.kotmaw.http.HttpClient
 import no.stelar7.kotmaw.http.HttpResponse
 import no.stelar7.kotmaw.plugin.getMany
@@ -33,3 +32,14 @@ class ChampionMasteryProducer
 fun KotMaw.championMasteries(platform: Platform.Service, id: Long) = async {
     getMany<ChampionMastery>(APIEndpoint.CHAMPION_MASTERY_ALL, hashMapOf("platform" to platform, "id" to id))
 }
+
+data class ChampionMastery(val championLevel: Int,
+                           val chestGranted: Boolean,
+                           val championPoints: Int,
+                           val championPointsSinceLastLevel: Long = 0,
+                           val championPointsUntilNextLevel: Long = 0,
+                           val tokensEarned: Int = 0,
+                           val championId: Int = 0,
+                           val lastPlayTime: Long = 0)
+
+
