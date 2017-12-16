@@ -1,14 +1,15 @@
 package no.stelar7.kotmaw
 
-import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import no.stelar7.kotmaw.debug.DebugLevel
 import no.stelar7.kotmaw.limiter.StandardBurstLimiter
 import no.stelar7.kotmaw.plugin.registerProducer
 import no.stelar7.kotmaw.plugin.registerRatelimiterType
 import no.stelar7.kotmaw.plugin.sortProducers
-import no.stelar7.kotmaw.producer.defaults.*
-import no.stelar7.kotmaw.riotconstant.Platform
+import no.stelar7.kotmaw.producer.defaults.ChampionMasteryProducer
+import no.stelar7.kotmaw.producer.defaults.MatchProducer
+import no.stelar7.kotmaw.producer.defaults.SummonerProducer
+import no.stelar7.kotmaw.producer.defaults.ThirdPartyProducer
 
 class KotMaw(api_key: String)
 {
@@ -25,6 +26,7 @@ class KotMaw(api_key: String)
         registerProducer(SummonerProducer::class)
         registerProducer(ChampionMasteryProducer::class)
         registerProducer(MatchProducer::class)
+        registerProducer(ThirdPartyProducer::class)
         sortProducers()
 
         registerRatelimiterType(StandardBurstLimiter::class)
@@ -34,33 +36,18 @@ class KotMaw(api_key: String)
 
 fun main(args: Array<String>)
 {
-    val api = KotMaw("RGAPI-9a66e168-f840-45df-9867-d4d06255e10f")
+    val api = KotMaw("RGAPI-fd0eb940-46e9-4dfc-921b-3b6b4390da6a")
 
     runBlocking {
-        launch {
-            // run in background (blocking)
-            //            api.championMasteries(Platform.Service.EUW1, 19613950)
-            //            api.summonerByAccountId(Platform.Service.EUW1, 22401330)
-            //            api.summonerBySummonerId(Platform.Service.EUW1, 19613950)
-            //            api.summonerByName(Platform.Service.EUW1, "stelar7")
+        // run in background (blocking)
+        //            api.championMasteries(Platform.Service.EUW1, 19613950)
+        //            api.summonerByAccountId(Platform.Service.EUW1, 22401330)
+        //            api.summonerBySummonerId(Platform.Service.EUW1, 19613950)
+        //            api.summonerByName(Platform.Service.EUW1, "stelar7")
+        //            api.matchlist(Platform.Service.EUW1, 22401330).await().matches.forEach { println(it) }
+        //            api.match(Platform.Service.EUW1, 3452333365).await()
+        //            api.timeline(Platform.Service.EUW1, 3452333365).await()
+        //            api.thirdPartyCode(Platform.Service.EUW1, 19613950, "Galio").await()
 
-
-            api.matchlist(Platform.Service.EUW1, 22401330) {
-                MatchListParams(queue = setOf(440))
-            }.await().matches.forEach { println(it) }
-
-
-            //            api.matchlist(Platform.Service.EUW1, 22401330) {
-            //                queue = setOf(1)
-            //                season = setOf(2)
-            //                champion = setOf(3)
-            //                beginTime = 4
-            //                endTime = 5
-            //                beginIndex = 6
-            //                endIndex = 7
-            //            }
-
-
-        }.join()
     }
 }

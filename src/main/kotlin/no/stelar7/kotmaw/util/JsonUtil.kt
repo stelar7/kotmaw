@@ -2,6 +2,7 @@ package no.stelar7.kotmaw.util
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 
 object JsonUtil
 {
@@ -16,6 +17,13 @@ object JsonUtil
 
 
     inline fun <reified T: Any> fromJson(data: String): T
+    {
+        val internal = if (data.startsWith('"')) "{\"value\"=$data}" else data
+
+        return gson.fromJson(internal, T::class.java)
+    }
+
+    inline fun <reified T: Any> fromJson(data: JsonObject): T
     {
         return gson.fromJson(data, T::class.java)
     }
