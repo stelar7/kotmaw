@@ -62,49 +62,39 @@ fun sortProducers()
     producers.forEach { _, v -> v.sortByDescending { it.priority } }
 }
 
-internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint, data: Map<String, Any?>): List<ProductionData>
+internal inline suspend fun <reified T: Any> doCommonStuff(endpoint: APIEndpoint): List<ProductionData>
 {
     val classMethodPairList = producers[T::class] ?: throw IllegalArgumentException("No producer registered for \"${T::class.simpleName}\"")
-    val productionData = classMethodPairList.filter { it.endpoint == endpoint }
-
-    require(data.containsKey("platform"))
-
-    if (productionData.first().limited)
-    {
-        runBlocking {
-            limiters[data["platform"]]!![data["platform"]]!!.plus(limiters[data["platform"]]!![endpoint]!!).forEach {
-                async {
-                    KotMaw.debugLevel.printIf(DebugLevel.ALL, "Getting token for limiter $it")
-                    it.getToken()
-                }
-            }
-        }
-    }
-
-    return productionData
+    return classMethodPairList.filter { it.endpoint == endpoint }
 }
 
 fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any?>, productionData: List<ProductionData>): HttpResponse
 {
-    var output: HttpResponse? = null
-
     require(data.containsKey("platform"))
 
+    var limit = true
+    var response: HttpResponse? = null
     productionData.forEach {
-        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${it.endpoint}\" from plugin \"${it.instance::class.simpleName}\" with priority \"${it.priority}\"")
-        val result = it.method.call(it.instance, data) as HttpResponse
-
-        when (result.responseCode)
+        // Only limit once, and only if that call is limited
+        if (it.limited && !limit)
         {
-            200 -> output = result
-            404 -> if (data.containsKey("404")) output = result
-
-            401 -> throw IllegalArgumentException("API key is missing from call")
-            403 -> throw IllegalArgumentException("API key is invalid")
-            429 -> throw IllegalArgumentException("Ratelimit exceeded")
+            runBlocking {
+                limiters[data["platform"]]!![data["platform"]]!!.plus(limiters[data["platform"]]!![endpoint]!!).forEach {
+                    async {
+                        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Getting token for limiter $it")
+                        it.getToken()
+                        limit = true
+                    }
+                }
+            }
         }
 
-        if (output != null)
+
+        KotMaw.debugLevel.printIf(DebugLevel.ALL, "Calling method \"${it.endpoint}\" from plugin \"${it.instance::class.simpleName}\" with priority \"${it.priority}\"")
+        val result = it.method.call(it.instance, data) as HttpResponse
+        response = handleResponse(result, data)
+
+        if (response != null)
         {
             return@forEach
         }
@@ -112,27 +102,42 @@ fun applyLimiting(endpoint: APIEndpoint, data: Map<String, Any?>, productionData
         KotMaw.debugLevel.printIf(DebugLevel.ALL, "\"${it.endpoint}\": plugin \"${it.instance::class.simpleName}\": priority \"${it.priority}\" : no valid result")
     }
 
-    if (output == null)
+    if (response == null)
     {
         throw IllegalArgumentException("All producers failed to create a valid response")
     }
 
     limiters[data["platform"]]!![endpoint]!!.forEach {
         KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for method limiter $it")
-        it.updateLimits(data["platform"] as Platform.Service, endpoint, output!!)
+        it.updateLimits(data["platform"] as Platform.Service, endpoint, response!!)
     }
 
     limiters[data["platform"]]!![data["platform"]]!!.forEach {
         KotMaw.debugLevel.printIf(DebugLevel.ALL, "Updating ratelimits for app limiter $it")
-        it.updateLimits(data["platform"] as Platform.Service, data["platform"], output!!)
+        it.updateLimits(data["platform"] as Platform.Service, data["platform"], response!!)
     }
 
-    return output!!
+    return response!!
+}
+
+private fun handleResponse(result: HttpResponse, data: Map<String, Any?>): HttpResponse?
+{
+    return when (result.responseCode)
+    {
+        200  -> result
+        404  -> if (data.containsKey("404")) result else null
+
+        401  -> throw IllegalArgumentException("API key is missing from call")
+        403  -> throw IllegalArgumentException("API key is invalid")
+        429  -> throw IllegalArgumentException("Ratelimit exceeded")
+
+        else -> throw IllegalArgumentException("Unhandled response code")
+    }
 }
 
 internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Map<String, Any?>): T
 {
-    val productionData = doCommonStuff<T>(endpoint, data)
+    val productionData = doCommonStuff<T>(endpoint)
     val response = applyLimiting(endpoint, data, productionData)
 
     return JsonUtil.fromJson(response.toString)
@@ -141,7 +146,7 @@ internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Ma
 
 internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data: Map<String, Any?>): List<T>
 {
-    val productionData = doCommonStuff<T>(endpoint, data)
+    val productionData = doCommonStuff<T>(endpoint)
     val response = applyLimiting(endpoint, data, productionData)
 
     val list: List<T> = JsonUtil.fromJson(response.toString)
