@@ -24,6 +24,7 @@ class KotMaw(api_key: String)
         registerProducer(MatchProducer::class)
         registerProducer(ThirdPartyProducer::class)
         registerProducer(LeagueProducer::class)
+        registerProducer(SpectatorProducer::class)
         sortProducers()
 
         registerRatelimiterType(StandardBurstLimiter::class)

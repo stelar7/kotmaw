@@ -16,10 +16,11 @@ object JsonUtil
     }
 
 
-    inline fun <reified T: Any> fromJson(data: String): T
+    inline fun <reified T: Any> fromJson(data: String): T?
     {
-        val internal = if (data.startsWith('"')) "{\"value\"=$data}" else data
+        if (data.startsWith("{\"status\":{")) return null
 
+        val internal = if (data.startsWith('"')) "{\"value\"=$data}" else data
         return gson.fromJson(internal, T::class.java)
     }
 

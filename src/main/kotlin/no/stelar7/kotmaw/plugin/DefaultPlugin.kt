@@ -137,6 +137,11 @@ private fun handleResponse(result: HttpResponse, data: Map<String, Any?>): HttpR
 
 internal inline suspend fun <reified T: Any> get(endpoint: APIEndpoint, data: Map<String, Any?>): T
 {
+    return getNullable(endpoint, data)!!
+}
+
+internal inline suspend fun <reified T: Any> getNullable(endpoint: APIEndpoint, data: Map<String, Any?>): T?
+{
     val productionData = doCommonStuff<T>(endpoint)
     val response = applyLimiting(endpoint, data, productionData)
 
@@ -149,13 +154,13 @@ internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data
     val productionData = doCommonStuff<T>(endpoint)
     val response = applyLimiting(endpoint, data, productionData)
 
-    val list: List<T> = JsonUtil.fromJson(response.toString)
+    val list: List<T> = JsonUtil.fromJson(response.toString)!!
     val resultList: MutableList<T> = mutableListOf()
 
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Transforming from List<LinkedTreeMap> to List<T>")
 
     list.forEach {
-        val fixed = JsonUtil.fromJson<T>(JsonUtil.toJson(it))
+        val fixed = JsonUtil.fromJson<T>(JsonUtil.toJson(it))!!
         resultList.add(fixed)
     }
 

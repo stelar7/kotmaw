@@ -5,7 +5,7 @@ import no.stelar7.kotmaw.debug.DebugLevel
 
 fun main(args: Array<String>)
 {
-    KotMaw.debugLevel = DebugLevel.ALL
+    KotMaw.debugLevel = DebugLevel.NONE
     val api = KotMaw("RGAPI-a899b3e1-6d2b-432c-bd7b-519621765c94")
 
     runBlocking {
@@ -23,6 +23,7 @@ fun main(args: Array<String>)
         //  api.masterLeauge(Platform.Service.EUW1, "RANKED_SOLO_5x5").await()
         //  api.leagueBySummoner(Platform.Service.EUW1, 19613950).await()
         //  api.leagueById(Platform.Service.EUW1, "ad217c20-f84a-11e6-b340-c81f66dd2a8f").await()
-
+        //  api.featuredGames(Platform.Service.EUW1).await()
+        //  api.currentGame(Platform.Service.EUW1, 19613950).await()
     }
 }
