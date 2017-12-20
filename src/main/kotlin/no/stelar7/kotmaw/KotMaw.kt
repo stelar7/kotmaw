@@ -5,10 +5,7 @@ import no.stelar7.kotmaw.limiter.StandardBurstLimiter
 import no.stelar7.kotmaw.plugin.registerProducer
 import no.stelar7.kotmaw.plugin.registerRatelimiterType
 import no.stelar7.kotmaw.plugin.sortProducers
-import no.stelar7.kotmaw.producer.defaults.ChampionMasteryProducer
-import no.stelar7.kotmaw.producer.defaults.MatchProducer
-import no.stelar7.kotmaw.producer.defaults.SummonerProducer
-import no.stelar7.kotmaw.producer.defaults.ThirdPartyProducer
+import no.stelar7.kotmaw.producer.defaults.*
 
 class KotMaw(api_key: String)
 {
@@ -26,6 +23,7 @@ class KotMaw(api_key: String)
         registerProducer(ChampionMasteryProducer::class)
         registerProducer(MatchProducer::class)
         registerProducer(ThirdPartyProducer::class)
+        registerProducer(LeagueProducer::class)
         sortProducers()
 
         registerRatelimiterType(StandardBurstLimiter::class)

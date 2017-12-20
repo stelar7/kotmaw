@@ -6,7 +6,7 @@ import no.stelar7.kotmaw.debug.DebugLevel
 fun main(args: Array<String>)
 {
     KotMaw.debugLevel = DebugLevel.ALL
-    val api = KotMaw("RGAPI-fd0eb940-46e9-4dfc-921b-3b6b4390da6a")
+    val api = KotMaw("RGAPI-a899b3e1-6d2b-432c-bd7b-519621765c94")
 
     runBlocking {
         // run in background (blocking)
@@ -19,6 +19,10 @@ fun main(args: Array<String>)
         //  api.match(Platform.Service.EUW1, 3452333365).await()
         //  api.timeline(Platform.Service.EUW1, 3452333365).await()
         //  api.thirdPartyCode(Platform.Service.EUW1, 19613950, "Galio").await()
+        //  api.challengerLeauge(Platform.Service.EUW1, "RANKED_SOLO_5x5").await()
+        //  api.masterLeauge(Platform.Service.EUW1, "RANKED_SOLO_5x5").await()
+        //  api.leagueBySummoner(Platform.Service.EUW1, 19613950).await()
+        //  api.leagueById(Platform.Service.EUW1, "ad217c20-f84a-11e6-b340-c81f66dd2a8f").await()
 
     }
 }
