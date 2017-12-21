@@ -151,10 +151,7 @@ internal inline suspend fun <reified T: Any> getNullable(endpoint: APIEndpoint, 
 
 internal inline suspend fun <reified T: Any> getMany(endpoint: APIEndpoint, data: Map<String, Any?>): List<T>
 {
-    val productionData = doCommonStuff<T>(endpoint)
-    val response = applyLimiting(endpoint, data, productionData)
-
-    val list: List<T> = JsonUtil.fromJson(response.toString)!!
+    val list: List<T> = get(endpoint, data)
     val resultList: MutableList<T> = mutableListOf()
 
     KotMaw.debugLevel.printIf(DebugLevel.ALL, "Transforming from List<LinkedTreeMap> to List<T>")

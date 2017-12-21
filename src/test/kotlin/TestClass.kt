@@ -5,7 +5,7 @@ import no.stelar7.kotmaw.debug.DebugLevel
 
 fun main(args: Array<String>)
 {
-    KotMaw.debugLevel = DebugLevel.NONE
+    KotMaw.debugLevel = DebugLevel.ALL
     val api = KotMaw("RGAPI-a899b3e1-6d2b-432c-bd7b-519621765c94")
 
     runBlocking {
